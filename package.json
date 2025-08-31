@@ -1,0 +1,30 @@
+{
+  "name": "live-cost-calculator",
+  "version": "1.0.0",
+  "description": "直播成本计算系统 - Node.js版本",
+  "main": "app.js",
+  "scripts": {
+    "start": "node app.js",
+    "dev": "nodemon app.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "cost-calculator",
+    "live-streaming",
+    "nodejs",
+    "express"
+  ],
+  "author": "开发团队",
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.18.2",
+    "cors": "^2.8.5",
+    "body-parser": "^1.20.2"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.1"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
