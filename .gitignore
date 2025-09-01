@@ -51,3 +51,40 @@ Thumbs.db
 # 构建输出
 dist/
 build/
+
+# Docker 相关
+.dockerignore.bak
+docker-compose.override.yml
+
+# SSL 证书文件
+ssl/
+*.crt
+*.key
+*.pem
+*.p12
+
+# 生产环境配置
+.env.production
+config/production.json
+
+# 部署脚本备份
+*.bat
+deploy-*.sh
+
+# 文档草稿和备份
+*.md.bak
+*.md.tmp
+说明文档-*.md
+Docker部署说明-*.md
+
+# 测试和开发文件
+test_cases.md
+需求文档.md
+
+# 日志目录
+logs/
+nginx-logs/
+
+# 备份文件
+*.backup
+*.old
