@@ -3,6 +3,7 @@
 ## 部署状态
 
 ✅ **配置完成**: 所有Docker配置文件已创建  
+✅ **Nginx集成**: 已添加Nginx反向代理支持  
 ⚠️ **网络问题**: Docker镜像拉取可能受网络限制影响  
 ✅ **本地验证**: 应用在端口34145正常运行  
 
@@ -15,16 +16,27 @@
 - 生产环境优化配置
 
 ### 2. docker-compose.yml
-- 服务名: `fans-fee-calculator`
-- 端口映射: `34145:34145`
-- 自动重启: `unless-stopped`
+- **Node.js服务**: `fans-fee-app` (内部端口34145)
+- **Nginx服务**: `nginx` (对外端口80/443)
+- 健康检查和服务依赖配置
 - 独立网络: `fans-fee-network`
 
-### 3. .dockerignore
+### 3. nginx.conf
+- 反向代理配置，将请求转发到Node.js应用
+- 静态文件缓存优化
+- 安全头配置
+- Gzip压缩支持
+
+### 4. Dockerfile.nginx
+- 基于 `nginx:1.25-alpine` 镜像
+- 自定义配置和健康检查
+- 时区设置和日志配置
+
+### 5. .dockerignore
 - 排除 `node_modules`、日志文件等
 - 优化构建速度和镜像大小
 
-### 4. deploy.bat
+### 6. deploy.bat (Windows) / deploy.sh (Linux)
 - Windows一键部署脚本
 - 包含停止、构建、启动、状态检查
 
@@ -34,11 +46,15 @@
 ```bash
 # Windows环境
 deploy.bat
+
+# Linux环境
+chmod +x deploy.sh
+./deploy.sh deploy
 ```
 
 ### 方式2: 手动Docker命令
 ```bash
-# 构建并启动
+# 构建并启动（包含Nginx）
 docker-compose up -d
 
 # 查看状态
@@ -46,6 +62,9 @@ docker-compose ps
 
 # 查看日志
 docker-compose logs -f
+
+# 单独查看Nginx日志
+docker-compose logs -f nginx
 
 # 停止服务
 docker-compose down
@@ -62,6 +81,15 @@ npm start
 
 ## 网络问题解决方案
 
+**当前状态**: 检测到Docker镜像拉取失败（网络连接超时）
+
+### 🚀 快速解决方案
+运行网络问题修复脚本：
+```bash
+docker-fix-network.bat
+```
+
+### 📋 手动解决方案
 如果遇到Docker镜像拉取失败，可以尝试以下解决方案：
 
 ### 1. 配置Docker镜像源
@@ -96,29 +124,42 @@ FROM registry.cn-hangzhou.aliyuncs.com/library/node:18-alpine
 
 ### 健康检查
 ```bash
-# 检查服务状态
-curl http://localhost:34145/api/health
+# 检查Nginx健康状态
+curl http://localhost/health
 
-# 预期响应
-{
-  "status": "ok",
-  "timestamp": "2024-xx-xx",
-  "uptime": "xx seconds"
-}
+# 检查Node.js应用（通过Nginx代理）
+curl http://localhost/
+
+# 直接检查Node.js应用（容器内部）
+docker exec fans-fee-app curl http://localhost:34145
 ```
 
 ### 功能测试
-1. 访问 http://localhost:34145
-2. 输入测试数据进行计算
-3. 验证结果正确性
+1. **通过Nginx访问**: http://localhost （推荐）
+2. **直接访问Node.js**: http://localhost:34145 （仅开发调试）
+3. 输入测试数据进行计算
+4. 验证结果正确性
+
+### 服务架构
+```
+用户请求 → Nginx (端口80) → Node.js应用 (端口34145)
+```
 
 ## 生产环境建议
 
-1. **反向代理**: 使用Nginx作为反向代理
-2. **SSL证书**: 配置HTTPS支持
-3. **日志管理**: 配置日志收集和轮转
+1. **SSL证书**: 将证书文件放入 `./ssl/` 目录并启用HTTPS配置
+2. **域名配置**: 修改 `nginx.conf` 中的 `server_name`
+3. **日志管理**: 配置日志收集和轮转（已配置基础日志）
 4. **监控告警**: 配置服务监控和告警
 5. **备份策略**: 定期备份配置和数据
+6. **负载均衡**: 多实例部署时配置负载均衡
+
+### HTTPS配置步骤
+1. 将SSL证书文件放入 `./ssl/` 目录：
+   - `cert.pem` (证书文件)
+   - `key.pem` (私钥文件)
+2. 取消 `nginx.conf` 中HTTPS配置的注释
+3. 重启服务: `docker-compose restart nginx`
 
 ## 故障排除
 
@@ -130,10 +171,55 @@ curl http://localhost:34145/api/health
 
 ### 日志查看
 ```bash
-# Docker日志
-docker-compose logs -f fans-fee-calculator
+# 查看所有服务日志
+docker-compose logs -f
 
-# 系统日志
-# Windows: 事件查看器
-# Linux: /var/log/
+# 查看Node.js应用日志
+docker-compose logs -f fans-fee-app
+
+# 查看Nginx日志
+docker-compose logs -f nginx
+
+# 查看Nginx访问日志（主机目录）
+tail -f ./logs/nginx/access.log
+
+# 查看Nginx错误日志（主机目录）
+tail -f ./logs/nginx/error.log
 ```
+
+## Linux部署脚本使用说明
+
+### 脚本功能
+```bash
+# 完整部署
+./deploy.sh deploy
+
+# 启动服务
+./deploy.sh start
+
+# 停止服务
+./deploy.sh stop
+
+# 重启服务
+./deploy.sh restart
+
+# 查看状态
+./deploy.sh status
+
+# 查看日志
+./deploy.sh logs
+
+# 清理资源
+./deploy.sh clean
+
+# 显示帮助
+./deploy.sh help
+```
+
+### 脚本特性
+- 🎨 彩色输出和进度提示
+- 🔍 自动检查系统依赖
+- 📁 自动创建必要目录
+- 🔄 服务健康检查
+- 🧹 资源清理功能
+- 📊 详细的状态显示

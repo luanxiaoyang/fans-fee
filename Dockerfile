@@ -1,4 +1,6 @@
 # 使用官方Node.js运行时作为基础镜像
+# 如果网络问题，可以使用国内镜像源：
+# FROM registry.cn-hangzhou.aliyuncs.com/library/node:18-alpine
 FROM node:18-alpine
 
 # 设置工作目录

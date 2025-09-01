@@ -1,0 +1,48 @@
+# Nginx Dockerfile - 粉丝费用计算器反向代理服务
+# 基于官方nginx镜像构建
+
+FROM nginx:1.25-alpine
+
+# 维护者信息
+LABEL maintainer="fans-fee-calculator"
+LABEL description="Nginx reverse proxy for fans fee calculator"
+LABEL version="1.0.0"
+
+# 安装必要的工具
+RUN apk add --no-cache \
+    curl \
+    tzdata
+
+# 设置时区
+ENV TZ=Asia/Shanghai
+RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
+
+# 创建必要的目录
+RUN mkdir -p /var/log/nginx /var/cache/nginx /etc/nginx/conf.d
+
+# 复制自定义nginx配置
+COPY nginx.conf /etc/nginx/nginx.conf
+
+# 创建自定义错误页面目录
+RUN mkdir -p /usr/share/nginx/html/errors
+
+# 创建简单的错误页面
+RUN echo '<!DOCTYPE html><html><head><title>Service Unavailable</title></head><body><h1>503 Service Unavailable</h1><p>The service is temporarily unavailable. Please try again later.</p></body></html>' > /usr/share/nginx/html/50x.html
+
+# 创建健康检查脚本
+RUN echo '#!/bin/sh' > /usr/local/bin/health-check.sh && \
+    echo 'curl -f http://localhost/health || exit 1' >> /usr/local/bin/health-check.sh && \
+    chmod +x /usr/local/bin/health-check.sh
+
+# 设置正确的权限
+RUN chown -R nginx:nginx /var/log/nginx /var/cache/nginx /usr/share/nginx/html
+
+# 暴露端口
+EXPOSE 80 443
+
+# 健康检查
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+    CMD /usr/local/bin/health-check.sh
+
+# 启动nginx
+CMD ["nginx", "-g", "daemon off;"]

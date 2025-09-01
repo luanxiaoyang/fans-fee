@@ -1,11 +1,10 @@
 version: '3.8'
 
 services:
-  fans-fee-calculator:
+  # Node.js应用服务
+  fans-fee-app:
     build: .
-    container_name: fans-fee-calculator
-    ports:
-      - "34145:34145"
+    container_name: fans-fee-app
     environment:
       - NODE_ENV=production
       - PORT=34145
@@ -14,7 +13,41 @@ services:
       - ./logs:/app/logs
     networks:
       - fans-fee-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:34145"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Nginx反向代理服务
+  nginx:
+    build:
+      context: .
+      dockerfile: Dockerfile.nginx
+    container_name: fans-fee-nginx
+    ports:
+      - "80:80"
+      - "443:443"
+    restart: unless-stopped
+    volumes:
+      - ./logs/nginx:/var/log/nginx
+      - ./ssl:/etc/nginx/ssl:ro  # SSL证书目录(可选)
+    networks:
+      - fans-fee-network
+    depends_on:
+      fans-fee-app:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "/usr/local/bin/health-check.sh"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 10s
 
 networks:
   fans-fee-network:
     driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
