@@ -83,7 +83,6 @@ test_cases.md
 
 # 日志目录
 logs/
-nginx-logs/
 
 # 备份文件
 *.backup

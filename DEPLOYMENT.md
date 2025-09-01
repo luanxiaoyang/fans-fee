@@ -1,145 +1,133 @@
-# 🚀 部署指南
+# 部署指南
 
-本文档提供了粉丝费用计算器的详细部署说明，包括开发环境、生产环境和Docker部署方案。
+本文档提供粉丝费用计算器的详细部署说明，支持开发环境和生产环境的多种部署方式。
 
-## 📋 目录
-
-- [环境要求](#环境要求)
-- [开发环境部署](#开发环境部署)
-- [生产环境部署](#生产环境部署)
-- [Docker部署](#docker部署)
-- [域名配置](#域名配置)
-- [SSL证书配置](#ssl证书配置)
-- [故障排除](#故障排除)
-- [性能优化](#性能优化)
-
-## 🔧 环境要求
+## 环境要求
 
 ### 基础环境
-- **Node.js**: 18.0+ (推荐 18.17.0 LTS)
-- **npm**: 9.0+ 或 **yarn**: 1.22+
-- **Git**: 2.30+
+- **Node.js**: 16.x 或更高版本
+- **npm**: 8.x 或更高版本
+- **操作系统**: Windows/Linux/macOS
 
-### 生产环境额外要求
-- **Docker**: 20.10+
-- **Docker Compose**: 2.0+
-- **Nginx**: 1.20+ (如果不使用Docker)
-- **SSL证书**: 用于HTTPS访问
+### 可选环境
+- **Docker**: 20.x 或更高版本（用于容器化部署）
+- **PM2**: 全局进程管理器（用于生产环境）
 
-### 系统要求
-- **内存**: 最小 512MB，推荐 1GB+
-- **磁盘**: 最小 100MB 可用空间
-- **网络**: 开放端口 80, 443, 34145
-
-## 💻 开发环境部署
+## 开发环境部署
 
 ### 1. 克隆项目
 ```bash
-# 使用HTTPS
-git clone https://github.com/your-username/fans-fee.git
-cd fans-fee
-
-# 或使用SSH
-git clone git@github.com:your-username/fans-fee.git
+git clone <repository-url>
 cd fans-fee
 ```
 
 ### 2. 安装依赖
 ```bash
-# 使用npm
 npm install
-
-# 或使用yarn
-yarn install
 ```
 
 ### 3. 启动开发服务器
 ```bash
-# 普通启动
 npm start
-
-# 开发模式（自动重启）
-npm run dev
-
-# 或使用yarn
-yarn start
-yarn dev
 ```
 
 ### 4. 访问应用
-打开浏览器访问: `http://localhost:34145`
+打开浏览器访问：`http://localhost:34145`
 
-## 🌐 生产环境部署
+## 生产环境部署
 
-### 方案一: 直接部署
+### 方案一：直接部署
 
-#### 1. 服务器准备
+#### 1. 准备环境
 ```bash
-# 更新系统
-sudo apt update && sudo apt upgrade -y
-
-# 安装Node.js (Ubuntu/Debian)
+# 安装 Node.js（以 Ubuntu 为例）
 curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
 sudo apt-get install -y nodejs
 
-# 验证安装
-node --version
-npm --version
+# 安装 PM2 进程管理器
+npm install -g pm2
 ```
 
 #### 2. 部署应用
 ```bash
 # 克隆项目
-git clone https://github.com/your-username/fans-fee.git
+git clone <repository-url>
 cd fans-fee
 
-# 安装依赖
-npm ci --production
+# 安装生产依赖
+npm install --production
 
-# 安装PM2进程管理器
-npm install -g pm2
-
-# 启动应用
-pm2 start app.js --name "fans-fee"
+# 使用 PM2 启动应用
+pm2 start server.js --name "fans-fee" --env production
 
 # 设置开机自启
 pm2 startup
 pm2 save
 ```
 
-#### 3. 配置Nginx反向代理
+#### 3. 配置环境变量
 ```bash
-# 安装Nginx
-sudo apt install nginx -y
-
-# 创建配置文件
-sudo nano /etc/nginx/sites-available/fans-fee
+# 创建环境配置文件
+echo "NODE_ENV=production" > .env
+echo "PORT=34145" >> .env
 ```
 
-添加以下配置:
+### 方案二：Docker 部署（推荐）
+
+#### 1. 构建并启动容器
+```bash
+# 构建并启动
+docker-compose up -d
+
+# 查看运行状态
+docker-compose ps
+
+# 查看日志
+docker-compose logs -f fans-fee-app
+```
+
+#### 2. 容器管理命令
+```bash
+# 停止服务
+docker-compose down
+
+# 重启服务
+docker-compose restart
+
+# 更新应用
+git pull
+docker-compose up -d --build
+```
+
+## 反向代理配置
+
+如果需要使用域名访问或配置 HTTPS，建议在服务器上手动配置 Nginx 反向代理。
+
+### Nginx 配置示例
+
 ```nginx
 server {
     listen 80;
-    server_name fee.sexychat.club;
+    server_name your-domain.com;
     
-    # HTTP重定向到HTTPS
+    # HTTP 重定向到 HTTPS
     return 301 https://$server_name$request_uri;
 }
 
 server {
     listen 443 ssl http2;
-    server_name fee.sexychat.club;
+    server_name your-domain.com;
     
-    # SSL证书配置
-    ssl_certificate /etc/nginx/ssl/fee.sexychat.club.crt;
-    ssl_certificate_key /etc/nginx/ssl/fee.sexychat.club.key;
+    # SSL 证书配置
+    ssl_certificate /path/to/your/certificate.crt;
+    ssl_certificate_key /path/to/your/private.key;
     
-    # SSL安全配置
+    # SSL 安全配置
     ssl_protocols TLSv1.2 TLSv1.3;
     ssl_ciphers ECDHE-RSA-AES128-GCM-SHA256:ECDHE-RSA-AES256-GCM-SHA384;
     ssl_prefer_server_ciphers off;
     
-    # 反向代理到Node.js应用
+    # 反向代理配置
     location / {
         proxy_pass http://localhost:34145;
         proxy_http_version 1.1;
@@ -154,144 +142,66 @@ server {
 }
 ```
 
+## SSL 证书配置
+
+### 使用 Let's Encrypt（免费）
 ```bash
-# 启用站点
-sudo ln -s /etc/nginx/sites-available/fans-fee /etc/nginx/sites-enabled/
-
-# 测试配置
-sudo nginx -t
-
-# 重启Nginx
-sudo systemctl restart nginx
-```
-
-### 方案二: Docker部署（推荐）
-
-## 🐳 Docker部署
-
-### 1. 安装Docker
-```bash
-# Ubuntu/Debian
-curl -fsSL https://get.docker.com -o get-docker.sh
-sudo sh get-docker.sh
-
-# 添加用户到docker组
-sudo usermod -aG docker $USER
-
-# 安装Docker Compose
-sudo curl -L "https://github.com/docker/compose/releases/latest/download/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
-sudo chmod +x /usr/local/bin/docker-compose
-```
-
-### 2. 部署应用
-```bash
-# 克隆项目
-git clone https://github.com/your-username/fans-fee.git
-cd fans-fee
-
-# 构建并启动服务
-docker-compose up -d
-
-# 查看服务状态
-docker-compose ps
-
-# 查看日志
-docker-compose logs -f
-```
-
-### 3. Docker命令参考
-```bash
-# 停止服务
-docker-compose down
-
-# 重新构建镜像
-docker-compose build --no-cache
-
-# 更新服务
-docker-compose pull
-docker-compose up -d
-
-# 查看资源使用
-docker stats
-
-# 清理未使用的镜像
-docker system prune -f
-```
-
-## 🌍 域名配置
-
-### 1. DNS设置
-在域名管理面板中添加以下记录:
-```
-类型: A
-主机记录: @
-记录值: 你的服务器IP地址
-TTL: 600
-
-类型: CNAME
-主机记录: www
-记录值: fee.sexychat.club
-TTL: 600
-```
-
-### 2. 验证DNS解析
-```bash
-# 检查DNS解析
-nslookup fee.sexychat.club
-dig fee.sexychat.club
-
-# 检查网站可访问性
-curl -I http://fee.sexychat.club
-```
-
-## 🔒 SSL证书配置
-
-### 方案一: Let's Encrypt (免费)
-```bash
-# 安装Certbot
-sudo apt install certbot python3-certbot-nginx -y
+# 安装 Certbot
+sudo apt install certbot python3-certbot-nginx
 
 # 获取证书
-sudo certbot --nginx -d fee.sexychat.club
+sudo certbot --nginx -d your-domain.com
 
 # 设置自动续期
 sudo crontab -e
-# 添加以下行:
+# 添加以下行：
 # 0 12 * * * /usr/bin/certbot renew --quiet
 ```
 
-### 方案二: 手动配置SSL证书
+### 使用自签名证书（测试）
 ```bash
-# 创建SSL目录
-sudo mkdir -p /etc/nginx/ssl
-
-# 上传证书文件
-sudo cp fee.sexychat.club.crt /etc/nginx/ssl/
-sudo cp fee.sexychat.club.key /etc/nginx/ssl/
-
-# 设置权限
-sudo chmod 600 /etc/nginx/ssl/fee.sexychat.club.key
-sudo chmod 644 /etc/nginx/ssl/fee.sexychat.club.crt
+# 生成自签名证书
+openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
+  -keyout /etc/ssl/private/nginx-selfsigned.key \
+  -out /etc/ssl/certs/nginx-selfsigned.crt
 ```
 
-### 验证SSL配置
-```bash
-# 测试SSL证书
-openssl s_client -connect fee.sexychat.club:443 -servername fee.sexychat.club
+## 防火墙配置
 
-# 在线SSL测试
-# 访问: https://www.ssllabs.com/ssltest/
+### Ubuntu/Debian
+```bash
+# 开放应用端口
+sudo ufw allow 34145
+
+# 如果使用 Nginx
+sudo ufw allow 'Nginx Full'
+
+# 查看状态
+sudo ufw status
 ```
 
-## 🔧 故障排除
+### CentOS/RHEL
+```bash
+# 开放端口
+sudo firewall-cmd --permanent --add-port=34145/tcp
+sudo firewall-cmd --reload
+
+# 如果使用 Nginx
+sudo firewall-cmd --permanent --add-service=http
+sudo firewall-cmd --permanent --add-service=https
+sudo firewall-cmd --reload
+```
+
+## 故障排除
 
 ### 常见问题
 
-#### 1. 端口被占用
+#### 1. 端口占用
 ```bash
 # 查看端口占用
-sudo netstat -tlnp | grep :34145
-sudo lsof -i :34145
+netstat -tlnp | grep 34145
+# 或
+lsof -i :34145
 
 # 杀死占用进程
 sudo kill -9 <PID>
@@ -299,155 +209,142 @@ sudo kill -9 <PID>
 
 #### 2. 权限问题
 ```bash
-# 修复文件权限
+# 修改文件权限
 sudo chown -R $USER:$USER /path/to/fans-fee
 sudo chmod -R 755 /path/to/fans-fee
 ```
 
-#### 3. 内存不足
+#### 3. Node.js 版本问题
 ```bash
-# 查看内存使用
-free -h
-top
+# 检查 Node.js 版本
+node --version
+npm --version
 
-# 增加swap空间
-sudo fallocate -l 1G /swapfile
-sudo chmod 600 /swapfile
-sudo mkswap /swapfile
-sudo swapon /swapfile
+# 使用 nvm 管理版本
+curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.0/install.sh | bash
+nvm install 18
+nvm use 18
 ```
 
-#### 4. Docker问题
+#### 4. Docker 相关问题
 ```bash
-# 重启Docker服务
-sudo systemctl restart docker
+# 查看容器日志
+docker logs fans-fee-app
 
-# 清理Docker资源
-docker system prune -a -f
+# 进入容器调试
+docker exec -it fans-fee-app /bin/sh
 
-# 查看Docker日志
-sudo journalctl -u docker.service
+# 清理 Docker 资源
+docker system prune -a
 ```
 
 ### 日志查看
+
+#### PM2 日志
 ```bash
-# PM2日志
+# 查看应用日志
 pm2 logs fans-fee
 
-# Nginx日志
-sudo tail -f /var/log/nginx/access.log
-sudo tail -f /var/log/nginx/error.log
+# 查看错误日志
+pm2 logs fans-fee --err
 
-# Docker日志
+# 清空日志
+pm2 flush
+```
+
+#### Docker 日志
+```bash
+# 实时查看日志
 docker-compose logs -f fans-fee-app
-docker-compose logs -f fans-fee-nginx
+
+# 查看最近日志
+docker-compose logs --tail=100 fans-fee-app
 ```
 
-## ⚡ 性能优化
+## 性能优化
 
-### 1. Nginx优化
-```nginx
-# 在nginx.conf中添加
-worker_processes auto;
-worker_connections 1024;
-
-# 启用Gzip压缩
-gzip on;
-gzip_vary on;
-gzip_min_length 1024;
-gzip_types text/plain text/css application/json application/javascript;
-
-# 静态文件缓存
-location ~* \.(css|js|png|jpg|jpeg|gif|ico|svg)$ {
-    expires 1y;
-    add_header Cache-Control "public, immutable";
-}
-```
-
-### 2. Node.js优化
+### Node.js 应用优化
 ```bash
-# 设置环境变量
-export NODE_ENV=production
-export NODE_OPTIONS="--max-old-space-size=512"
+# 设置 Node.js 内存限制
+node --max-old-space-size=512 server.js
 
-# PM2集群模式
-pm2 start app.js -i max --name "fans-fee-cluster"
+# 使用 PM2 集群模式
+pm2 start server.js -i max --name "fans-fee-cluster"
 ```
 
-### 3. 监控设置
+### 系统监控
 ```bash
-# 安装监控工具
+# 安装系统监控工具
 npm install -g pm2-logrotate
 pm2 install pm2-server-monit
 
-# 设置日志轮转
-pm2 set pm2-logrotate:max_size 10M
-pm2 set pm2-logrotate:retain 7
+# 查看系统资源
+pm2 monit
 ```
 
-## 📊 健康检查
+## 健康检查
 
-### 应用健康检查
-```bash
-# 检查应用状态
-curl http://localhost:34145/api/health
-
-# 检查HTTPS访问
-curl -k https://fee.sexychat.club/api/health
-```
-
-### 自动化监控脚本
+### 创建健康检查脚本
 ```bash
 #!/bin/bash
 # health-check.sh
 
-URL="https://fee.sexychat.club/api/health"
-RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" $URL)
+response=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:34145/api/health)
 
-if [ $RESPONSE -eq 200 ]; then
-    echo "$(date): Service is healthy"
+if [ $response -eq 200 ]; then
+    echo "应用运行正常"
+    exit 0
 else
-    echo "$(date): Service is down (HTTP $RESPONSE)"
-    # 重启服务
-    pm2 restart fans-fee
+    echo "应用异常，HTTP状态码: $response"
+    exit 1
 fi
 ```
 
-## 🔄 更新部署
+### 设置定时检查
+```bash
+# 添加到 crontab
+*/5 * * * * /path/to/health-check.sh
+```
 
-### 1. 代码更新
+## 更新部署
+
+### 手动更新
 ```bash
 # 拉取最新代码
 git pull origin main
 
 # 安装新依赖
-npm install
+npm install --production
 
 # 重启应用
 pm2 restart fans-fee
 ```
 
-### 2. Docker更新
+### Docker 更新
 ```bash
 # 拉取最新代码
 git pull origin main
 
-# 重新构建并部署
-docker-compose down
-docker-compose build --no-cache
-docker-compose up -d
+# 重新构建并启动
+docker-compose up -d --build
 ```
 
-## 📞 技术支持
+## 备份策略
 
-如果在部署过程中遇到问题，请:
+### 代码备份
+```bash
+# 创建备份脚本
+#!/bin/bash
+DATE=$(date +%Y%m%d_%H%M%S)
+tar -czf "/backup/fans-fee_$DATE.tar.gz" /path/to/fans-fee
+```
 
-1. 查看相关日志文件
-2. 检查防火墙和端口设置
-3. 验证域名DNS解析
-4. 确认SSL证书有效性
-5. 联系技术支持团队
+### 定期备份
+```bash
+# 添加到 crontab（每天凌晨2点备份）
+0 2 * * * /path/to/backup-script.sh
+```
 
 ---
 
-**注意**: 请确保在生产环境中使用HTTPS，并定期更新系统和依赖包以保证安全性。
+如有问题，请查看项目 [README.md](./README.md) 或提交 Issue。
