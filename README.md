@@ -45,13 +45,49 @@
 ### 方法1: 使用启动脚本（推荐）
 1. 双击运行 `start.bat`
 2. 等待依赖安装完成
-3. 浏览器访问 `http://localhost:8000`
+3. 浏览器访问 `http://localhost:34145`
 
-### 方法2: 手动启动
+### 方法2: Docker部署（推荐生产环境）
+
+#### 前置要求
+- 已安装 Docker 和 Docker Compose
+
+#### 快速部署
+```bash
+# 方式1: 使用部署脚本（Windows）
+deploy.bat
+
+# 方式2: 手动部署
+docker-compose up -d
+```
+
+#### Docker命令说明
+```bash
+# 构建并启动服务
+docker-compose up -d
+
+# 查看服务状态
+docker-compose ps
+
+# 查看日志
+docker-compose logs -f
+
+# 停止服务
+docker-compose down
+
+# 重新构建镜像
+docker-compose build --no-cache
+```
+
+#### 访问地址
+- 本地访问: `http://localhost:34145`
+- 服务器访问: `http://your-server-ip:34145`
+
+### 方法3: 手动启动
 1. 安装Node.js 18+
 2. 安装依赖: `npm install`
 3. 启动服务: `npm start` 或 `node app.js`
-4. 浏览器访问: `http://localhost:8000`
+4. 浏览器访问: `http://localhost:34145`
 
 ### 开发模式
 ```bash

@@ -1,0 +1,20 @@
+version: '3.8'
+
+services:
+  fans-fee-calculator:
+    build: .
+    container_name: fans-fee-calculator
+    ports:
+      - "34145:34145"
+    environment:
+      - NODE_ENV=production
+      - PORT=34145
+    restart: unless-stopped
+    volumes:
+      - ./logs:/app/logs
+    networks:
+      - fans-fee-network
+
+networks:
+  fans-fee-network:
+    driver: bridge
