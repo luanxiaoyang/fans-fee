@@ -5,6 +5,23 @@ const path = require('path');
 const app = express();
 const PORT = process.env.PORT || 34145;
 
+// 成本配置
+const COST_CONFIG = {
+    groupMemberCost: 150,
+    fanCost: 0.2,
+    channelCost: 200,
+    channelDivider: 25,
+    networkCost: 100,
+    accountCost: 16,
+    registerFanCost: 0.15,
+    conversionBaseCost: 150,
+    payMemberCost: 5,
+    valueMemberCost: 50
+};
+
+// 工具函数：四舍五入保留两位小数
+const round2 = (num) => Math.round(num * 100) / 100;
+
 // 中间件配置
 app.use(cors());
 app.use(express.json());
@@ -179,65 +196,59 @@ const generateFormattedText = (dateStr, inputData, results, warnings) => {
 // 成本计算服务
 const calculateCosts = (data) => {
     try {
+        const c = COST_CONFIG;
+
         // 计算上粉总成本
         const total_cost = (
-            data.group_members * 150 +           // 小组成员 × 150
-            data.fans_count * 0.2 +             // 上粉数量 × 0.2
-            (data.channel_count * 200) / 25 +   // 通道数量 × 200 / 25
-            100 +                               // 网络费用
-            data.account_count * 16             // 账号数量 × 16
+            data.group_members * c.groupMemberCost +
+            data.fans_count * c.fanCost +
+            (data.channel_count * c.channelCost) / c.channelDivider +
+            c.networkCost +
+            data.account_count * c.accountCost
         );
-        
+
         // 计算每个上粉成本
         const cost_per_fan = total_cost / data.fans_count;
-        
+
         // 计算注册总成本
-        const register_cost = total_cost + data.fans_count * 0.15;
-        
+        const register_cost = total_cost + data.fans_count * c.registerFanCost;
+
         // 计算单个注册成本
         const cost_per_register = data.register_count > 0 ? register_cost / data.register_count : 0;
-        
+
         // 计算转化人员工资
-        const conversion_salary = 150 + data.pay_count * 5 + data.value_count * 50;
-        
+        const conversion_salary =
+            c.conversionBaseCost +
+            data.pay_count * c.payMemberCost +
+            data.value_count * c.valueMemberCost;
+
         // 计算付费总成本
         const pay_cost = register_cost + conversion_salary;
-        
+
         // 计算单个付费成本
         const cost_per_pay = data.pay_count > 0 ? pay_cost / data.pay_count : 0;
-        
+
         // 计算单个价值成本
         const cost_per_value = data.value_count > 0 ? pay_cost / data.value_count : 0;
-        
+
         // 价值总成本 = 付费总成本
         const value_total_cost = pay_cost;
-        
-        // 生成日报数据
-        const dailyReport = generateDailyReport(data, {
-            total_cost: Math.round(total_cost * 100) / 100,
-            register_cost: Math.round(register_cost * 100) / 100,
-            pay_cost: Math.round(pay_cost * 100) / 100,
-            value_total_cost: Math.round(value_total_cost * 100) / 100,
-            cost_per_fan: Math.round(cost_per_fan * 100) / 100,
-            cost_per_register: Math.round(cost_per_register * 100) / 100,
-            cost_per_pay: Math.round(cost_per_pay * 100) / 100,
-            cost_per_value: Math.round(cost_per_value * 100) / 100
-        });
-        
+
+        const results = {
+            total_cost: round2(total_cost),
+            register_cost: round2(register_cost),
+            pay_cost: round2(pay_cost),
+            value_total_cost: round2(value_total_cost),
+            cost_per_fan: round2(cost_per_fan),
+            cost_per_register: round2(cost_per_register),
+            cost_per_pay: round2(cost_per_pay),
+            cost_per_value: round2(cost_per_value)
+        };
+
+        const dailyReport = generateDailyReport(data, results);
+
         return {
-            // 总成本
-            total_cost: Math.round(total_cost * 100) / 100,
-            register_cost: Math.round(register_cost * 100) / 100,
-            pay_cost: Math.round(pay_cost * 100) / 100,
-            value_total_cost: Math.round(value_total_cost * 100) / 100,
-            
-            // 单个成本
-            cost_per_fan: Math.round(cost_per_fan * 100) / 100,
-            cost_per_register: Math.round(cost_per_register * 100) / 100,
-            cost_per_pay: Math.round(cost_per_pay * 100) / 100,
-            cost_per_value: Math.round(cost_per_value * 100) / 100,
-            
-            // 日报数据
+            ...results,
             daily_report: dailyReport
         };
         
