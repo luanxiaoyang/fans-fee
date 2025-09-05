@@ -11,8 +11,18 @@ app.use(cors());
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
-// 静态文件服务
-app.use(express.static(path.join(__dirname, 'static')));
+// 静态文件服务，配置缓存策略
+app.use(express.static(path.join(__dirname, 'static'), {
+    setHeaders: (res, filePath) => {
+        if (filePath.endsWith('.html')) {
+            // HTML 文件不缓存，确保更新及时
+            res.setHeader('Cache-Control', 'no-cache');
+        } else {
+            // 其他静态资源缓存 7 天，提高加载性能
+            res.setHeader('Cache-Control', 'public, max-age=604800');
+        }
+    }
+}));
 
 // 数据验证中间件
 const validateInput = (req, res, next) => {
