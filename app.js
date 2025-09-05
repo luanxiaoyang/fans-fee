@@ -25,15 +25,35 @@ app.use(express.static(path.join(__dirname, 'static'), {
 
 // 数据验证中间件
 const validateInput = (req, res, next) => {
-    const { fans_count } = req.body;
-    
-    if (!fans_count || fans_count <= 0) {
-        return res.status(400).json({
-            error: '上粉数量必须大于0',
-            detail: 'fans_count 参数无效'
-        });
+    const requiredFields = [
+        'fans_count',
+        'account_count',
+        'group_members',
+        'conversion_members',
+        'channel_count',
+        'register_count',
+        'pay_count',
+        'value_count'
+    ];
+
+    const parsedData = {};
+
+    for (const field of requiredFields) {
+        const value = Number(req.body[field]);
+
+        if (Number.isNaN(value) || value <= 0) {
+            return res.status(400).json({
+                error: `${field} 必须为正数`,
+                detail: `${field} 参数无效`
+            });
+        }
+
+        parsedData[field] = value;
     }
-    
+
+    // 将解析后的数据传递给后续处理中间件
+    req.body = parsedData;
+
     next();
 };
 
