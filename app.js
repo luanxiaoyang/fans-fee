@@ -275,7 +275,7 @@ app.use((error, req, res, next) => {
 });
 
 // 启动服务器
-app.listen(PORT, () => {
+const server = app.listen(PORT, () => {
     console.log('🚀 直播成本计算系统已启动');
     console.log(`📍 访问地址: http://localhost:${PORT}`);
     console.log(`🔧 环境: ${process.env.NODE_ENV || 'development'}`);
@@ -283,14 +283,15 @@ app.listen(PORT, () => {
 });
 
 // 优雅关闭
-process.on('SIGTERM', () => {
-    console.log('收到 SIGTERM 信号，正在关闭服务器...');
-    process.exit(0);
-});
+const gracefulShutdown = (signal) => {
+    console.log(`收到 ${signal} 信号，正在关闭服务器...`);
+    server.close(() => {
+        console.log('服务器已关闭');
+        process.exit(0);
+    });
+};
 
-process.on('SIGINT', () => {
-    console.log('收到 SIGINT 信号，正在关闭服务器...');
-    process.exit(0);
-});
+process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
+process.on('SIGINT', () => gracefulShutdown('SIGINT'));
 
 module.exports = app;
