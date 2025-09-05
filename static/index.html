@@ -4,72 +4,75 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>直播成本计算系统</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <div class="container">
-        <div class="header">
+        <header class="header">
             <h1>🎯 直播成本计算系统</h1>
             <p>精准计算上粉成本、注册成本、付费成本，助力业务决策</p>
-        </div>
-        
-        <div class="content">
+        </header>
+
+        <main class="content">
             <!-- 输入区域 -->
-            <div class="input-section">
+            <section class="input-section">
                 <h2 class="section-title">📊 输入参数</h2>
                 <form id="costForm">
                     <div class="form-group">
                         <label for="fans_count">上粉数量 *</label>
                         <input type="number" id="fans_count" name="fans_count" required min="1" placeholder="请输入上粉数量">
                     </div>
-                    
+
                     <div class="form-group">
                         <label for="account_count">账号数量</label>
                         <input type="number" id="account_count" name="account_count" value="0" min="0" placeholder="请输入账号数量">
                     </div>
-                    
+
                     <div class="form-group">
                         <label for="group_members">小组成员数量</label>
                         <input type="number" id="group_members" name="group_members" value="0" min="0" placeholder="请输入小组成员数量">
                     </div>
-                    
+
                     <div class="form-group">
                         <label for="conversion_members">转化成员数量</label>
                         <input type="number" id="conversion_members" name="conversion_members" value="0" min="0" placeholder="请输入转化成员数量">
                     </div>
-                    
+
                     <div class="form-group">
                         <label for="channel_count">通道数量</label>
                         <input type="number" id="channel_count" name="channel_count" value="0" min="0" placeholder="请输入通道数量">
                     </div>
-                    
+
                     <div class="form-group">
                         <label for="register_count">注册数量</label>
                         <input type="number" id="register_count" name="register_count" value="0" min="0" placeholder="请输入注册数量">
                     </div>
-                    
+
                     <div class="form-group">
                         <label for="pay_count">付费数量</label>
                         <input type="number" id="pay_count" name="pay_count" value="0" min="0" placeholder="请输入付费数量">
                     </div>
-                    
+
                     <div class="form-group">
                         <label for="value_count">价值数量</label>
                         <input type="number" id="value_count" name="value_count" value="0" min="0" placeholder="请输入价值数量">
                     </div>
-                    
+
                     <button type="submit" class="calculate-btn">🚀 开始计算</button>
                 </form>
-            </div>
-            
+            </section>
+
             <!-- 结果显示区域 -->
-            <div class="result-section">
+            <section class="result-section">
                 <h2 class="section-title">📈 计算结果</h2>
                 <div id="results">
                     <div class="loading">请填写参数并点击计算按钮</div>
                 </div>
-            </div>
-        </div>
+            </section>
+        </main>
     </div>
 
     <script src="script.js"></script>
