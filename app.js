@@ -1,6 +1,5 @@
 const express = require('express');
 const cors = require('cors');
-const bodyParser = require('body-parser');
 const path = require('path');
 
 const app = express();
@@ -8,8 +7,8 @@ const PORT = process.env.PORT || 34145;
 
 // 中间件配置
 app.use(cors());
-app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({ extended: true }));
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
 // 静态文件服务，配置缓存策略
 app.use(express.static(path.join(__dirname, 'static'), {
